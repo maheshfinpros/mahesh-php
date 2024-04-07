@@ -3,17 +3,19 @@ pipeline {
     stages {
         stage('Clone Repository') {
             steps {
-                git 'https://github.com/maheshfinpros/mahesh-php.git'
+                git credentialsId: 'ssh-key-c39efc99', url: 'https://github.com/maheshfinpros/mahesh-php.git'
             }
         }
-        stage('Configure Apache') {
+        stage('Deploy to Server') {
             steps {
-                sh 'sudo sed -i "s#DocumentRoot /var/www/html#DocumentRoot ${WORKSPACE}#" /etc/apache2/sites-available/000-default.conf'
-            }
-        }
-        stage('Restart Apache') {
-            steps {
-                sh 'sudo systemctl restart apache2'
+                script {
+                    sshagent(credentials: ['ssh-key-c39efc99']) {
+                        sh '''
+                            scp -i /c/Users/mahes/Downloads/yourkey.pem -r * ec2-user@13.235.246.148:/var/www/html/
+                            ssh -i /c/Users/mahes/Downloads/yourkey.pem ec2-user@13.235.246.148 "sudo systemctl restart httpd"
+                        '''
+                    }
+                }
             }
         }
     }
